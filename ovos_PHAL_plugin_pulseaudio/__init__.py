@@ -148,6 +148,17 @@ class PulseAudio:
     mute_re = re.compile('^set-sink-mute ([^ ]+) ((?:yes)|(?:no))')
 
     def __init__(self):
+        # 202home : update() ici scanne PulseAudio (`pacmd dump`) UNE SEULE
+        # FOIS, à la construction — jamais rejoué ensuite nulle part dans
+        # l'amont. Si ce scan tombe avant que PulseAudio n'ait fini de
+        # créer sa sortie combinée, self._volume/self._mute restent VIDES
+        # POUR TOUJOURS : get_sink_volume()/set_sink_volume()/get_mute()/
+        # set_mute() font tous list(self._volume_ou_mute.keys())[0], qui
+        # lève IndexError sans jamais se rattraper — ni la lecture ni le
+        # réglage du volume ne refonctionnent avant un redémarrage complet
+        # du service. Constaté en vrai. Chacune de ces quatre méthodes
+        # rescanne maintenant elle-même si son dictionnaire est encore
+        # vide, au moment où on en a besoin plutôt qu'une seule fois ici.
         self._mute = collections.OrderedDict()
         self._volume = collections.OrderedDict()
         self.update()
@@ -187,6 +198,10 @@ class PulseAudio:
         return self._vol_to_percent(vol)
 
     def get_mute(self, sink=None):
+        # 202home : rescan si _mute est encore vide — voir le commentaire
+        # de __init__ sur la course avec la création de la sortie combinée.
+        if not self._mute:
+            self.update()
         if not sink:
             sink = list(self._mute.keys())[0]
 
@@ -196,12 +211,18 @@ class PulseAudio:
         return self.get_sink_volume(sink)
 
     def get_sink_volume(self, sink=None):
+        # 202home : même rescan que get_mute(), même raison.
+        if not self._volume:
+            self.update()
         if not sink:
             sink = list(self._volume.keys())[0]
 
         return self._volume[sink]
 
     def set_mute(self, mute, sink=None):
+        # 202home : même rescan que get_mute()/get_sink_volume().
+        if not self._mute:
+            self.update()
         if not sink:
             sink = list(self._mute.keys())[0]
 
@@ -217,6 +238,9 @@ class PulseAudio:
         self.set_sink_volume(self._percent_to_vol(volume), sink)
 
     def set_sink_volume(self, volume, sink=None):
+        # 202home : même rescan que get_mute()/get_sink_volume().
+        if not self._volume:
+            self.update()
         if not sink:
             sink = list(self._volume.keys())[0]
         volume = int(volume)
