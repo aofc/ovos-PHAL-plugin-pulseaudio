@@ -3,9 +3,17 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ovos-PHAL-plugin-pulseaudio"
+# Nom pip ET entry point préfixés 202home- : fork sur un correctif RÉEL
+# (rescan si _volume/_mute vides — voir __init__.py), jamais notre besoin
+# propre, mais toujours un vrai fork puisqu'on s'écarte du code amont — pas
+# question de rester indiscernable de PyPI dans pip list/pip show. Module
+# Python en toutes lettres ("deuxcentdeuxhome", pas "202home" : un
+# identifiant Python ne peut pas commencer par un chiffre), même
+# contrainte que les deux autres forks 202home (wifi-setup,
+# gui-network-client).
+name = "202home-phal-plugin-pulseaudio"
 dynamic = ["version"]
-description = "A volume control plugin for OpenVoiceOS hardware abstraction layer"
+description = "Fork 202home de ovos-PHAL-plugin-pulseaudio (rescan si _volume/_mute vides)"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 authors = [
@@ -17,14 +25,14 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/OpenVoiceOS/ovos-PHAL-plugin-pulseaudio"
+Homepage = "https://github.com/aofc/ovos-PHAL-plugin-pulseaudio"
 
 [project.entry-points."opm.phal"]
-"ovos-PHAL-plugin-pulseaudio" = "ovos_PHAL_plugin_pulseaudio:PulseAudioVolumeControlPlugin"
+"202home-phal-plugin-pulseaudio" = "deuxcentdeuxhome_phal_plugin_pulseaudio:PulseAudioVolumeControlPlugin"
 
 [tool.setuptools.dynamic]
-version = {attr = "ovos_PHAL_plugin_pulseaudio.version.__version__"}
+version = {attr = "deuxcentdeuxhome_phal_plugin_pulseaudio.version.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["ovos_PHAL_plugin_pulseaudio*"]
+include = ["deuxcentdeuxhome_phal_plugin_pulseaudio*"]

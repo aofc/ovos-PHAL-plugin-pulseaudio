@@ -25,7 +25,7 @@ class PulseAudioVolumeControlPlugin(PHALPlugin):
     validator = PulseAudioValidator
 
     def __init__(self, bus=None, config=None):
-        super().__init__(bus=bus, name="ovos-PHAL-plugin-pulseaudio", config=config)
+        super().__init__(bus=bus, name="202home-phal-plugin-pulseaudio", config=config)
         self.settings = JsonConfigXDG(self.name, subfolder="OpenVoiceOS")
         self.pulseaudio = PulseAudio()
         self.bus.on("mycroft.volume.get", self.handle_volume_request)
