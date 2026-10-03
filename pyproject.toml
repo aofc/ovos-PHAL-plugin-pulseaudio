@@ -8,9 +8,7 @@ build-backend = "setuptools.build_meta"
 # propre, mais toujours un vrai fork puisqu'on s'écarte du code amont — pas
 # question de rester indiscernable de PyPI dans pip list/pip show. Module
 # Python en toutes lettres ("deuxcentdeuxhome", pas "202home" : un
-# identifiant Python ne peut pas commencer par un chiffre), même
-# contrainte que les deux autres forks 202home (wifi-setup,
-# gui-network-client).
+# identifiant Python ne peut pas commencer par un chiffre).
 name = "202home-phal-plugin-pulseaudio"
 dynamic = ["version"]
 description = "Fork 202home de ovos-PHAL-plugin-pulseaudio (rescan si _volume/_mute vides)"
