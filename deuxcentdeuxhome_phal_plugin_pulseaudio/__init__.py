@@ -136,21 +136,35 @@ class PulseAudio:
     def __init__(self):
         self._mute = collections.OrderedDict()
         self._volume = collections.OrderedDict()
+        self._defaut = None
         self.update()
+
+    def _pactl(self, *args):
+        """La sortie de `pactl <args>` (étiquettes en anglais : LC_ALL=C), ou None si pactl échoue."""
+        try:
+            return subprocess.run(
+                ['pactl', *args],
+                capture_output=True, text=True, check=True,
+                env={**os.environ, "LC_ALL": "C"}
+            ).stdout
+        except (subprocess.SubprocessError, FileNotFoundError):
+            return None
 
     def update(self):
         """Récupère la liste des sinks, leur volume et statut mute via pactl."""
-        try:
-            # LC_ALL=C : les étiquettes (« Volume: », « Mute: », « Name: ») ne dépendent
-            # plus de la langue du système ; l'analyse ci-dessous les attend en anglais.
-            res = subprocess.run(
-                ['pactl', 'list', 'sinks'],
-                capture_output=True, text=True, check=True,
-                env={**os.environ, "LC_ALL": "C"}
-            )
-            out = res.stdout
-        except (subprocess.SubprocessError, FileNotFoundError):
+        # LC_ALL=C : les étiquettes (« Volume: », « Mute: », « Name: ») ne dépendent
+        # plus de la langue du système ; l'analyse ci-dessous les attend en anglais.
+        out = self._pactl('list', 'sinks')
+        if out is None:
             return
+        # La sortie PAR DÉFAUT, celle où le son joue (Mark II : CombinedOutput, réglée par
+        # pulseaudio-system.pa). Le PREMIER sink de la liste n'est pas forcément elle (sortie HDMI
+        # du Raspberry Pi…) : on réglait alors une sortie muette — le volume affiché passait de 0 à
+        # 100 % sans rien changer à l'oreille (constaté par Robin sur le Mark II, 2026-10-03).
+        info = self._pactl('info') or ''
+        defaut = re.search(r'^Default Sink:\s*(\S+)\s*$', info, re.M)
+        if defaut:
+            self._defaut = defaut.group(1)
 
         current_sink = None
         sinks_vol = collections.OrderedDict()
@@ -182,6 +196,8 @@ class PulseAudio:
     def _get_target_sink(self, sink=None, data_dict=None):
         if sink:
             return sink
+        if self._defaut:
+            return self._defaut
         if data_dict and len(data_dict) > 0:
             return list(data_dict.keys())[0]
         # Fallback si aucun sink n'est enregistré dans l'index

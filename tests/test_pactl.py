@@ -93,6 +93,25 @@ p.decrease_volume(10)
 verifier("diminuer de 10 depuis 35 règle 25",
          [c for c in sets if "set-sink-volume" in c][-1][-1], "25%")
 
+# La sortie PAR DÉFAUT (pactl info), pas la première de la liste : le son joue sur elle.
+INFO = "Server Name: pulseaudio\nDefault Sink: hdmi_output\nDefault Source: sj201_capture\n"
+sets = []
+
+
+def faux_run_defaut(cmd, **kw):
+    sets.append(cmd)
+    return types.SimpleNamespace(stdout=INFO if cmd[1:] == ["info"] else SORTIE, returncode=0)
+
+
+subprocess.run = faux_run_defaut
+d = PulseAudio()
+verifier("volume lu sur la sortie par défaut (20), pas la première de la liste (50)", d.get_volume_percent(), 20)
+verifier("muet lu sur la sortie par défaut", d.get_mute(), True)
+d.set_volume_percent(70)
+verifier("volume réglé sur la sortie par défaut", [c for c in sets if "set-sink-volume" in c][-1], ["pactl", "set-sink-volume", "hdmi_output", "70%"])
+d.set_mute(False)
+verifier("muet réglé sur la sortie par défaut", [c for c in sets if "set-sink-mute" in c][-1], ["pactl", "set-sink-mute", "hdmi_output", "0"])
+
 print()
 if echecs:
     print(f"{len(echecs)} ÉCHEC(S) sur {total}.")
